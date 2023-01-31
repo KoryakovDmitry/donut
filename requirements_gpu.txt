@@ -1,0 +1,10 @@
+--extra-index-url https://download.pytorch.org/whl/cu113
+torch==1.11.0+cu113
+torchvision==0.12.0+cu113
+pytorch-lightning==1.6.4
+transformers==4.11.3
+timm==0.5.4
+pdf2image==1.16.0
+opencv-python==4.5.1.48
+Pillow==9.0.0
+jsonlines
