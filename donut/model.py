@@ -22,8 +22,39 @@ from torchvision import transforms
 from torchvision.transforms.functional import resize, rotate
 from transformers import MBartConfig, MBartForCausalLM, XLMRobertaTokenizer
 from transformers.file_utils import ModelOutput
-from transformers.utils.generic import to_py_obj
+
 from transformers.modeling_utils import PretrainedConfig, PreTrainedModel
+
+from collections import OrderedDict, UserDict
+
+
+def _is_torch(x):
+    import torch
+
+    return isinstance(x, torch.Tensor)
+
+
+def is_torch_tensor(x):
+    """
+    Tests if `x` is a torch tensor or not. Safe to call even if torch is not installed.
+    """
+    return _is_torch(x)
+
+
+def to_py_obj(obj):
+    """
+    Convert a PyTorch tensor, Numpy array or python list to a python list.
+    """
+    if isinstance(obj, (dict, UserDict)):
+        return {k: to_py_obj(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [to_py_obj(o) for o in obj]
+    elif is_torch_tensor(obj):
+        return obj.detach().cpu().tolist()
+    elif isinstance(obj, (np.ndarray, np.number)):  # tolist also works on 0d np arrays
+        return obj.tolist()
+    else:
+        return obj
 
 
 class SwinEncoder(nn.Module):
@@ -42,12 +73,12 @@ class SwinEncoder(nn.Module):
     """
 
     def __init__(
-        self,
-        input_size: List[int],
-        align_long_axis: bool,
-        window_size: int,
-        encoder_layer: List[int],
-        name_or_path: Union[str, bytes, os.PathLike] = None,
+            self,
+            input_size: List[int],
+            align_long_axis: bool,
+            window_size: int,
+            encoder_layer: List[int],
+            name_or_path: Union[str, bytes, os.PathLike] = None,
     ):
         super().__init__()
         self.input_size = input_size
@@ -80,8 +111,8 @@ class SwinEncoder(nn.Module):
                 if x.endswith("relative_position_index") or x.endswith("attn_mask"):
                     pass
                 elif (
-                    x.endswith("relative_position_bias_table")
-                    and self.model.layers[0].blocks[0].attn.window_size[0] != 12
+                        x.endswith("relative_position_bias_table")
+                        and self.model.layers[0].blocks[0].attn.window_size[0] != 12
                 ):
                     pos_bias = swin_state_dict[x].unsqueeze(0)[0]
                     old_len = int(math.sqrt(len(pos_bias)))
@@ -112,8 +143,8 @@ class SwinEncoder(nn.Module):
         """
         img = img.convert("RGB")
         if self.align_long_axis and (
-            (self.input_size[0] > self.input_size[1] and img.width > img.height)
-            or (self.input_size[0] < self.input_size[1] and img.width < img.height)
+                (self.input_size[0] > self.input_size[1] and img.width > img.height)
+                or (self.input_size[0] < self.input_size[1] and img.width < img.height)
         ):
             img = rotate(img, angle=-90, expand=True)
         img = resize(img, min(self.input_size))
@@ -145,13 +176,13 @@ class BARTCustomTokenizer(XLMRobertaTokenizer):
         super().__init__(**kwargs)
 
     def batch_decode(
-        self,
-        sequences: Union[List[int], List[List[int]], "np.ndarray", "torch.Tensor"],
-        confidences: Union[List[float], List[List[float]], "np.ndarray"],
-        decoder_delim: str,
-        skip_special_tokens: bool = False,
-        clean_up_tokenization_spaces: bool = True,
-        **kwargs
+            self,
+            sequences: Union[List[int], List[List[int]], "np.ndarray", "torch.Tensor"],
+            confidences: Union[List[float], List[List[float]], "np.ndarray"],
+            decoder_delim: str,
+            skip_special_tokens: bool = False,
+            clean_up_tokenization_spaces: bool = True,
+            **kwargs
     ) -> List[str]:
         """
         Convert a list of lists of token ids into a list of strings by calling decode.
@@ -184,12 +215,12 @@ class BARTCustomTokenizer(XLMRobertaTokenizer):
         ]
 
     def decode(
-        self,
-        token_ids: Union[int, List[int], "np.ndarray", "torch.Tensor"],
-        token_confs: Union[int, List[float], "np.ndarray"],
-        skip_special_tokens: bool = False,
-        clean_up_tokenization_spaces: bool = True,
-        **kwargs
+            self,
+            token_ids: Union[int, List[int], "np.ndarray", "torch.Tensor"],
+            token_confs: Union[int, List[float], "np.ndarray"],
+            skip_special_tokens: bool = False,
+            clean_up_tokenization_spaces: bool = True,
+            **kwargs
     ) -> str:
         """
         Converts a sequence of ids in a string, using the tokenizer and vocabulary with options to remove special
@@ -222,13 +253,13 @@ class BARTCustomTokenizer(XLMRobertaTokenizer):
         )
 
     def _decode(
-        self,
-        token_ids: List[int],
-        token_confs: List[float],
-        skip_special_tokens: bool = False,
-        clean_up_tokenization_spaces: bool = True,
-        spaces_between_special_tokens: bool = True,
-        **kwargs
+            self,
+            token_ids: List[int],
+            token_confs: List[float],
+            skip_special_tokens: bool = False,
+            clean_up_tokenization_spaces: bool = True,
+            spaces_between_special_tokens: bool = True,
+            **kwargs
     ) -> str:
         self._decode_use_source_tokenizer = kwargs.pop("use_source_tokenizer", False)
 
@@ -299,7 +330,7 @@ class BARTDecoder(nn.Module):
     """
 
     def __init__(
-        self, decoder_layer: int, max_position_embeddings: int, name_or_path: Union[str, bytes, os.PathLike] = None
+            self, decoder_layer: int, max_position_embeddings: int, name_or_path: Union[str, bytes, os.PathLike] = None
     ):
         super().__init__()
         self.decoder_layer = decoder_layer
@@ -338,7 +369,8 @@ class BARTDecoder(nn.Module):
                         self.resize_bart_abs_pos_emb(
                             bart_state_dict[x],
                             self.max_position_embeddings
-                            + 2,  # https://github.com/huggingface/transformers/blob/v4.11.3/src/transformers/models/mbart/modeling_mbart.py#L118-L119
+                            + 2,
+                            # https://github.com/huggingface/transformers/blob/v4.11.3/src/transformers/models/mbart/modeling_mbart.py#L118-L119
                         )
                     )
                 elif x.endswith("embed_tokens.weight") or x.endswith("lm_head.weight"):
@@ -355,7 +387,8 @@ class BARTDecoder(nn.Module):
         if newly_added_num > 0:
             self.model.resize_token_embeddings(len(self.tokenizer))
 
-    def prepare_inputs_for_inference(self, input_ids: torch.Tensor, past=None, use_cache: bool = None, encoder_outputs: torch.Tensor = None):
+    def prepare_inputs_for_inference(self, input_ids: torch.Tensor, past=None, use_cache: bool = None,
+                                     encoder_outputs: torch.Tensor = None):
         """
         Args:
             input_ids: (batch_size, sequence_lenth)
@@ -377,16 +410,16 @@ class BARTDecoder(nn.Module):
         return output
 
     def forward(
-        self,
-        input_ids,
-        attention_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        past_key_values: Optional[torch.Tensor] = None,
-        labels: Optional[torch.Tensor] = None,
-        use_cache: bool = None,
-        output_attentions: Optional[torch.Tensor] = None,
-        output_hidden_states: Optional[torch.Tensor] = None,
-        return_dict: bool = None,
+            self,
+            input_ids,
+            attention_mask: Optional[torch.Tensor] = None,
+            encoder_hidden_states: Optional[torch.Tensor] = None,
+            past_key_values: Optional[torch.Tensor] = None,
+            labels: Optional[torch.Tensor] = None,
+            use_cache: bool = None,
+            output_attentions: Optional[torch.Tensor] = None,
+            output_hidden_states: Optional[torch.Tensor] = None,
+            return_dict: bool = None,
     ):
         """
         A forward fucntion to get cross attentions and utilize `generate` function
@@ -459,8 +492,8 @@ class BARTDecoder(nn.Module):
                     mode="linear",
                     align_corners=False,
                 )
-                .squeeze(0)
-                .permute(1, 0)
+                    .squeeze(0)
+                    .permute(1, 0)
             )
         return weight
 
@@ -493,16 +526,16 @@ class DonutConfig(PretrainedConfig):
     model_type = "donut"
 
     def __init__(
-        self,
-        input_size: List[int] = [2560, 1920],
-        align_long_axis: bool = False,
-        window_size: int = 10,
-        encoder_layer: List[int] = [2, 2, 14, 2],
-        decoder_layer: int = 4,
-        max_position_embeddings: int = None,
-        max_length: int = 1536,
-        name_or_path: Union[str, bytes, os.PathLike] = "",
-        **kwargs,
+            self,
+            input_size: List[int] = [2560, 1920],
+            align_long_axis: bool = False,
+            window_size: int = 10,
+            encoder_layer: List[int] = [2, 2, 14, 2],
+            decoder_layer: int = 4,
+            max_position_embeddings: int = None,
+            max_length: int = 1536,
+            name_or_path: Union[str, bytes, os.PathLike] = "",
+            **kwargs,
     ):
         super().__init__()
         self.input_size = input_size
@@ -561,9 +594,9 @@ class DonutModel(PreTrainedModel):
 
     @staticmethod
     def apply_fusion(
-        fusion_mode: str,
-        unfused_tensor:
-        torch.Tensor, dim: int
+            fusion_mode: str,
+            unfused_tensor:
+            torch.Tensor, dim: int
     ) -> torch.Tensor:
         # for donut
         # decoder num attention-head = 16, decoder num layers = 4
@@ -581,14 +614,14 @@ class DonutModel(PreTrainedModel):
 
     @staticmethod
     def max_bbox_from_heatmap(
-        decoder_cross_attentions: torch.Tensor,
-        tkn_indexes: List[int],
-        final_h: int = 1280,
-        final_w: int = 960,
-        heatmap_h: int = 40,
-        heatmap_w: int = 30,
-        discard_ratio: float = 0.99,
-        return_thres_agg_heatmap: bool = False
+            decoder_cross_attentions: torch.Tensor,
+            tkn_indexes: List[int],
+            final_h: int = 1280,
+            final_w: int = 960,
+            heatmap_h: int = 40,
+            heatmap_w: int = 30,
+            discard_ratio: float = 0.99,
+            return_thres_agg_heatmap: bool = False
     ) -> Union[Tuple[int, int, int, int], Tuple[Tuple[int, int, int, int], np.ndarray]]:
         """
         decoder_cross_attention: tuple(tuple(torch.FloatTensor))
@@ -620,7 +653,8 @@ class DonutModel(PreTrainedModel):
             hmap = hmap.unsqueeze(dim=-1).cpu().numpy()
             hmap = (hmap * 255.).astype(np.uint8)  # (40, 30, 1) uint8
             # fuse heatmaps for different tokens by taking the max
-            agg_heatmap = np.max(np.asarray([agg_heatmap, cv2.resize(hmap, (final_w, final_h))]), axis=0).astype(np.uint8)
+            agg_heatmap = np.max(np.asarray([agg_heatmap, cv2.resize(hmap, (final_w, final_h))]), axis=0).astype(
+                np.uint8)
 
         # threshold to remove small attention pockets
         thres_heatmap = cv2.threshold(agg_heatmap, 200, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
@@ -636,18 +670,18 @@ class DonutModel(PreTrainedModel):
         return max_area_box
 
     def inference(
-        self,
-        image: PIL.Image = None,
-        prompt: str = None,
-        image_tensors: Optional[torch.Tensor] = None,
-        prompt_tensors: Optional[torch.Tensor] = None,
-        return_json: bool = True,
-        return_confs: bool = True,
-        return_tokens: bool = False,
-        return_attentions: bool = False,
-        return_max_bbox: bool = False,
-        nested_list_set: set = {"Items"},
-        nested_dict_set: set = {"terms", "total", "shipto", "customer", "vendor", "invoice"}
+            self,
+            image: PIL.Image = None,
+            prompt: str = None,
+            image_tensors: Optional[torch.Tensor] = None,
+            prompt_tensors: Optional[torch.Tensor] = None,
+            return_json: bool = True,
+            return_confs: bool = True,
+            return_tokens: bool = False,
+            return_attentions: bool = False,
+            return_max_bbox: bool = False,
+            nested_list_set: set = {"Items"},
+            nested_dict_set: set = {"terms", "total", "shipto", "customer", "vendor", "invoice"}
     ):
         """
         Generate a token sequence in an auto-regressive manner,
@@ -719,13 +753,14 @@ class DonutModel(PreTrainedModel):
         self.return_confs = return_confs
         self.DELIM = "}~}~}~{"  # important, use a DELIM that has a very low prob of appearing in text
 
-        for idx, (seq, confs, idxs) in enumerate(self.decoder.tokenizer.batch_decode(decoder_output.sequences, decoder_output_confs, self.DELIM)):
+        for idx, (seq, confs, idxs) in enumerate(
+                self.decoder.tokenizer.batch_decode(decoder_output.sequences, decoder_output_confs, self.DELIM)):
             eos_tkn, pad_tkn = self.decoder.tokenizer.eos_token, self.decoder.tokenizer.pad_token
             split_seq = [tkn for tkn in seq.split(self.DELIM) if tkn]
             confs = [confs[i] for i, tkn in enumerate(split_seq)
-                     if not(tkn.strip().lower() == eos_tkn.lower() or tkn.strip().lower() == pad_tkn.lower())]
+                     if not (tkn.strip().lower() == eos_tkn.lower() or tkn.strip().lower() == pad_tkn.lower())]
             idxs = [idxs[i] for i, tkn in enumerate(seq.split(self.DELIM))
-                    if not(tkn.strip().lower() == eos_tkn.lower() or tkn.strip().lower() == pad_tkn.lower())]
+                    if not (tkn.strip().lower() == eos_tkn.lower() or tkn.strip().lower() == pad_tkn.lower())]
             seq = seq.replace(eos_tkn, "").replace(pad_tkn, "")
             for i, tkn in enumerate(seq.split(self.DELIM)):
                 if re.search(r"<.*?>", tkn, re.IGNORECASE):  # remove first task start token conf
@@ -804,9 +839,9 @@ class DonutModel(PreTrainedModel):
                     if update_special_tokens_for_json_key:
                         self.decoder.add_special_tokens([fr"<s_{k}>", fr"</s_{k}>"])
                     output += (
-                        fr"<s_{k}>"
-                        + self.json2token(obj[k], update_special_tokens_for_json_key, sort_json_key)
-                        + fr"</s_{k}>"
+                            fr"<s_{k}>"
+                            + self.json2token(obj[k], update_special_tokens_for_json_key, sort_json_key)
+                            + fr"</s_{k}>"
                     )
                 return output
         elif type(obj) == list:
@@ -852,9 +887,9 @@ class DonutModel(PreTrainedModel):
                         for leaf in content.split(r"<sep/>"):
                             leaf = leaf.strip()
                             if (
-                                leaf in self.decoder.tokenizer.get_added_vocab()
-                                and leaf[0] == "<"
-                                and leaf[-2:] == "/>"
+                                    leaf in self.decoder.tokenizer.get_added_vocab()
+                                    and leaf[0] == "<"
+                                    and leaf[-2:] == "/>"
                             ):
                                 leaf = leaf[1:-2]  # for categorical special tokens
                             output[key].append(leaf)
@@ -870,7 +905,8 @@ class DonutModel(PreTrainedModel):
         else:
             return [] if is_inner_value else {"text_sequence": tokens}
 
-    def token2json_with_confs(self, tokens: str, confs: List[float], idxs: List[list], delim: str, is_inner_val: bool = False) -> List[str]:
+    def token2json_with_confs(self, tokens: str, confs: List[float], idxs: List[list], delim: str,
+                              is_inner_val: bool = False) -> List[str]:
         """
         Convert a (generated) token sequence into an ordered JSON format
         """
@@ -921,7 +957,8 @@ class DonutModel(PreTrainedModel):
                     assert len(cntsplit) == len(content_confs) == len(content_idxs)
 
                     if r"<s_" in content and r"</s_" in content:  # non-leaf node
-                        value = self.token2json_with_confs(content, content_confs, content_idxs, delim, is_inner_val=True)
+                        value = self.token2json_with_confs(content, content_confs, content_idxs, delim,
+                                                           is_inner_val=True)
                         if value:
                             if len(value) == 1:
                                 value = value[0]
@@ -929,15 +966,15 @@ class DonutModel(PreTrainedModel):
                     else:  # leaf nodes
                         output[key] = []
                         leaf_content_confs = [content_confs[i] for i, tkn in enumerate(cntsplit)
-                                              if not(re.search(r"<sep/>", tkn, re.IGNORECASE))]
+                                              if not (re.search(r"<sep/>", tkn, re.IGNORECASE))]
                         leaf_content_idxs = [content_idxs[i] for i, tkn in enumerate(cntsplit)
-                                             if not(re.search(r"<sep/>", tkn, re.IGNORECASE))]
+                                             if not (re.search(r"<sep/>", tkn, re.IGNORECASE))]
                         for leaf_i, leaf in enumerate(content.split(r"<sep/>")):
                             leaf = leaf.strip(delim)
                             if (
-                                leaf in self.decoder.tokenizer.get_added_vocab()
-                                and leaf[0] == "<"
-                                and leaf[-2:] == "/>"
+                                    leaf in self.decoder.tokenizer.get_added_vocab()
+                                    and leaf[0] == "<"
+                                    and leaf[-2:] == "/>"
                             ):
                                 leaf = leaf[1:-2]  # for categorical special tokens
                             if leaf:
@@ -958,7 +995,8 @@ class DonutModel(PreTrainedModel):
                         break
                 tokens = tokens[tokens.find(end_token) + len(end_token):].strip(delim)
                 if tokens[:6] == r"<sep/>":  # non-leaf nodes
-                    return [output] + self.token2json_with_confs(tokens[6:], confs[1:], idxs[1:], delim, is_inner_val=True)
+                    return [output] + self.token2json_with_confs(tokens[6:], confs[1:], idxs[1:], delim,
+                                                                 is_inner_val=True)
         if len(output):
             return [output] if is_inner_val else output
         else:
@@ -966,10 +1004,10 @@ class DonutModel(PreTrainedModel):
 
     @classmethod
     def from_pretrained(
-        cls,
-        pretrained_model_name_or_path: Union[str, bytes, os.PathLike],
-        *model_args,
-        **kwargs,
+            cls,
+            pretrained_model_name_or_path: Union[str, bytes, os.PathLike],
+            *model_args,
+            **kwargs,
     ):
         r"""
         Instantiate a pretrained donut model from a pre-trained model configuration
@@ -979,18 +1017,20 @@ class DonutModel(PreTrainedModel):
                 Name of a pretrained model name either registered in huggingface.co. or saved in local,
                 e.g., `naver-clova-ix/donut-base`, or `naver-clova-ix/donut-base-finetuned-rvlcdip`
         """
-        model = super(DonutModel, cls).from_pretrained(pretrained_model_name_or_path, revision="official", *model_args, **kwargs)
+        model = super(DonutModel, cls).from_pretrained(pretrained_model_name_or_path, revision="official", *model_args,
+                                                       **kwargs)
 
         # truncate or interplolate position embeddings of donut decoder
         max_length = kwargs.get("max_length", model.config.max_position_embeddings)
         if (
-            max_length != model.config.max_position_embeddings
+                max_length != model.config.max_position_embeddings
         ):  # if max_length of trained model differs max_length you want to train
             model.decoder.model.model.decoder.embed_positions.weight = torch.nn.Parameter(
                 model.decoder.resize_bart_abs_pos_emb(
                     model.decoder.model.model.decoder.embed_positions.weight,
                     max_length
-                    + 2,  # https://github.com/huggingface/transformers/blob/v4.11.3/src/transformers/models/mbart/modeling_mbart.py#L118-L119
+                    + 2,
+                    # https://github.com/huggingface/transformers/blob/v4.11.3/src/transformers/models/mbart/modeling_mbart.py#L118-L119
                 )
             )
             model.config.max_position_embeddings = max_length
