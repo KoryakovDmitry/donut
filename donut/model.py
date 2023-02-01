@@ -685,7 +685,7 @@ class DonutModel(PreTrainedModel):
             prompt: str = None,
             image_tensors: Optional[torch.Tensor] = None,
             prompt_tensors: Optional[torch.Tensor] = None,
-            discard_ratio: float = 0.9,
+            discard_ratio: float = 0.5,
             return_json: bool = True,
             return_confs: bool = True,
             return_tokens: bool = False,
