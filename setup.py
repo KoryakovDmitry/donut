@@ -1,8 +1,3 @@
-"""
-Donut
-Copyright (c) 2022-present NAVER Corp.
-MIT License
-"""
 import os
 from setuptools import find_packages, setup
 
@@ -30,9 +25,9 @@ setup(
     description="OCR-free Document Understanding Transformer",
     long_description=read_long_description(),
     long_description_content_type="text/markdown",
-    author="Geewook Kim, Teakgyu Hong, Moonbin Yim, JeongYeon Nam, Jinyoung Park, Jinyeong Yim, Wonseok Hwang, Sangdoo Yun, Dongyoon Han, Seunghyun Park",
-    author_email="gwkim.rsrch@gmail.com",
-    url="https://github.com/clovaai/donut",
+    author="",
+    author_email="",
+    url="",
     license="MIT",
     packages=find_packages(
         exclude=[

@@ -13,6 +13,7 @@ dependencies:
     - Pillow==9.0.0
     - requests
     - jsonpickle
+    - matplotlib
     - dataclasses_json
     - torch==1.11.0
     - torchvision==0.12.0
