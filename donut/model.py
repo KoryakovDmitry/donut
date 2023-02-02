@@ -767,7 +767,7 @@ class DonutModel(PreTrainedModel):
         # add score for end token and wrap scores in a list
         decoder_output_confs = [np.concatenate([decoder_output_confs, [1.]], axis=0)]
 
-        output = {"pages": list()}
+        output = {"predictions": list()}
         self.return_tokens = return_tokens
         self.return_confs = return_confs
         self.DELIM = "}~}~}~{"  # important, use a DELIM that has a very low prob of appearing in text
@@ -789,12 +789,12 @@ class DonutModel(PreTrainedModel):
             seq = re.sub(r"<.*?>", "", seq, count=1).strip(self.DELIM)  # remove first task start token
             if confs and idxs and return_json:
                 if return_confs or return_tokens:
-                    output["pages"].append(self.token2json_with_confs(seq, confs, idxs, delim=self.DELIM))
+                    output["predictions"].append(self.token2json_with_confs(seq, confs, idxs, delim=self.DELIM))
                 else:
                     seq = seq.replace(self.DELIM, ' ')
-                    output["pages"].append(self.token2json(seq))
+                    output["predictions"].append(self.token2json(seq))
             else:
-                output["pages"].append(seq)
+                output["predictions"].append(seq)
 
         # if return_attentions:
         #     output["attentions"] = {
@@ -807,7 +807,7 @@ class DonutModel(PreTrainedModel):
                 super_imposed_imgs = dict()
 
             preds_with_max_bbox = []
-            for pred_obj in output["pages"]:
+            for pred_obj in output["predictions"]:
                 temp_pred_obj = {}
                 for top_key, top_val in pred_obj.items():
                     # if top_key in nested_list_set:
@@ -911,7 +911,7 @@ class DonutModel(PreTrainedModel):
                         temp_pred_obj[top_key] = [text, conf, max_bbox]
                 preds_with_max_bbox.append(temp_pred_obj)
 
-            output["pages"] = preds_with_max_bbox
+            output["predictions"] = preds_with_max_bbox
 
         if return_plot:
             return output, super_imposed_raw_heatmap_imgs, super_imposed_imgs

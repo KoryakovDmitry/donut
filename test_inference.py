@@ -49,6 +49,8 @@ for img_path in imgs_sample:
                                         return_tokens=True,
                                         return_max_bbox=True,
                                         return_plot=False)
+    output["pages"] = output["predictions"]
+    del output["predictions"]
 
     print(json.dumps(output, ensure_ascii=False, indent=2))
     break
