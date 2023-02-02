@@ -77,7 +77,11 @@ class DonutModelPLModule(pl.LightningModule):
             pred = re.sub(r"(?:(?<=>) | (?=</s_))", "", pred)
             answer = re.sub(r"<.*?>", "", answer, count=1)
             answer = answer.replace(self.model.decoder.tokenizer.eos_token, "")
-            scores.append(edit_distance(pred, answer) / max(len(pred), len(answer)))
+            try:
+                ed = edit_distance(pred, answer) / max(len(pred), len(answer))
+            except ZeroDivisionError:
+                ed = 0
+            scores.append(ed)
 
             if self.config.get("verbose", False) and len(scores) == 1:
                 self.print(f"Prediction: {pred}")
