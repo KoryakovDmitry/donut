@@ -707,7 +707,11 @@ class DonutModel(PreTrainedModel):
             nested_list_set: Fields that are nested lists of dicts
             nested_dict_set: Fields that are nested dicts
         """
-        orig_w, orig_h = image.size
+        try:
+            orig_w, orig_h = image.size
+        except:
+            print(image)
+
         if return_plot:
             img_np = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
             img_np = cv2.resize(img_np, (self.final_w, self.final_h))

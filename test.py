@@ -39,6 +39,7 @@ def test(args):
     dataset = load_dataset(args.dataset_name_or_path, split=args.split)
 
     for idx, sample in tqdm(enumerate(dataset), total=len(dataset)):
+        print(sample.keys())
         ground_truth = json.loads(sample["ground_truth"])
 
         if args.task_name == "docvqa":
