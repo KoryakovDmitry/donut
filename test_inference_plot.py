@@ -49,6 +49,8 @@ for img_path in imgs_sample:
                                                                                             return_tokens=True,
                                                                                             return_max_bbox=True,
                                                                                             return_plot=True)
+    output["pages"] = output["predictions"]
+    del output["predictions"]
 
     for key, super_imposed_raw_heatmap_img in super_imposed_raw_heatmap_imgs.items():
         path2save = osp.join(dir2save_results_fn_hm, f"{key}_{fn_wout_ext}_hmap.jpg")
