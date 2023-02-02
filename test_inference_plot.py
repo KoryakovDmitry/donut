@@ -14,7 +14,7 @@ from copy import deepcopy
 dir2save_results = "result/"
 os.makedirs(dir2save_results, exist_ok=True)
 
-imgs_sample = glob("dataset/dataset_nano_ziffer/test/page_0_2018.06.01_Ziffer_Invoice_Linkedin_EUR_89.95.jpg")
+imgs_sample = glob("dataset/nano_ziffer/test/page_0_2018.06.01_Ziffer_Invoice_Linkedin_EUR_89.95.jpg")
 # imgs_sample = np.random.choice(imgs, 3, replace=False)
 
 
