@@ -11,14 +11,14 @@ from donut import DonutModel
 from donut.plot_utils import plot_bboxes
 from copy import deepcopy
 
-dir2save_results = "result/"
+dir2save_results = "result_tower_company/"
 os.makedirs(dir2save_results, exist_ok=True)
 
-imgs_sample = glob("dataset/nano_ziffer/test/page_0_2018.06.01_Ziffer_Invoice_Linkedin_EUR_89.95.jpg")
+imgs_sample = glob("dataset/dataset_tower_company_v1/test/5.jpeg")
 # imgs_sample = np.random.choice(imgs, 3, replace=False)
 
 
-pretrained_model = DonutModel.from_pretrained("config/ziffer")
+pretrained_model = DonutModel.from_pretrained("config/tower_company")
 # pretrained_model = DonutModel.from_pretrained("naver-clova-ix/donut-base-finetuned-cord-v2")
 
 if torch.cuda.is_available():
@@ -43,7 +43,7 @@ for img_path in imgs_sample:
 
     input_img = Image.open(img_path)
     output, super_imposed_raw_heatmap_imgs, super_imposed_imgs = pretrained_model.inference(image=input_img,
-                                                                                            prompt="<s_dataset_nano_ziffer>",
+                                                                                            prompt="<s_tower_company_v1>",
                                                                                             return_attentions=True,
                                                                                             return_confs=True,
                                                                                             return_tokens=True,

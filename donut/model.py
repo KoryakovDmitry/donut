@@ -811,7 +811,8 @@ class DonutModel(PreTrainedModel):
                 temp_pred_obj = {}
                 for top_key, top_val in pred_obj.items():
                     # if top_key in nested_list_set:
-                    if isinstance(top_val, list):
+                    if isinstance(top_val, list) and (not isinstance(top_val[0], str)) and (
+                    not isinstance(top_val[2], float)) and (not isinstance(top_val[0], list)):
                         temp_pred_obj[top_key] = []
                         for item in top_val:
                             temp_item_obj = {}
