@@ -24,7 +24,8 @@ def plot_bboxes(img_pil, res, plot_cof=True):
     draw_pred = ImageDraw.Draw(pred_img_pil)
 
     for top_key, top_val in res.items():
-        if isinstance(top_val, list):
+        if isinstance(top_val, list) and (not isinstance(top_val[0], str)) and (
+                not isinstance(top_val[2], float)) and (not isinstance(top_val[0], list)):
             for n_line, item in enumerate(top_val):
                 for item_key, item_val in item.items():
 
