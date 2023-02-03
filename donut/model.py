@@ -14,7 +14,7 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.swin_transformer import SwinTransformer
 from torchvision import transforms
 from torchvision.transforms.functional import resize, rotate
-from transformers import MBartConfig, MBartForCausalLM, XLMRobertaTokenizer
+from transformers import MBartConfig, MBartForCausalLM, XLMRobertaTokenizer, MBartTokenizer
 from transformers.file_utils import ModelOutput
 from transformers.modeling_utils import PretrainedConfig, PreTrainedModel
 
@@ -151,10 +151,11 @@ class BARTDecoder(nn.Module):
         self.decoder_layer = decoder_layer
         self.max_position_embeddings = max_position_embeddings
 
-        self.tokenizer = XLMRobertaTokenizer.from_pretrained(
-            "orzhan/bart-transcription-aggregation" if not name_or_path else name_or_path
+        self.tokenizer = MBartTokenizer.from_pretrained(model_name)
+	self.tokenizer = XLMRobertaTokenizer.from_pretrained(
+            "IlyaGusev/mbart_ru_sum_gazeta" if not name_or_path else name_or_path
         )
-
+	
         self.model = MBartForCausalLM(
             config=MBartConfig(
                 is_decoder=True,
@@ -176,7 +177,7 @@ class BARTDecoder(nn.Module):
 
         # weight init with asian-bart
         if not name_or_path:
-            bart_state_dict = MBartForCausalLM.from_pretrained("orzhan/bart-transcription-aggregation").state_dict()
+            bart_state_dict = MBartForCausalLM.from_pretrained("IlyaGusev/mbart_ru_sum_gazeta").state_dict()
             new_bart_state_dict = self.model.state_dict()
             for x in new_bart_state_dict:
                 if x.endswith("embed_positions.weight") and self.max_position_embeddings != 1024:
