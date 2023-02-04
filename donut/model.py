@@ -152,8 +152,11 @@ class BARTDecoder(nn.Module):
         self.max_position_embeddings = max_position_embeddings
 
         # self.tokenizer = MBartTokenizer.from_pretrained(model_name)
+        # self.tokenizer = XLMRobertaTokenizer.from_pretrained(
+        #     "xlm-roberta-large" if not name_or_path else name_or_path
+        # )
         self.tokenizer = XLMRobertaTokenizer.from_pretrained(
-            "xlm-roberta-large" if not name_or_path else name_or_path
+            "DeepPavlov/mbart-large-50-ru-persona-chat" if not name_or_path else name_or_path
         )
 
         self.model = MBartForCausalLM(
@@ -177,7 +180,7 @@ class BARTDecoder(nn.Module):
 
         # weight init with asian-bart
         if not name_or_path:
-            bart_state_dict = MBartForCausalLM.from_pretrained("IlyaGusev/mbart_ru_sum_gazeta").state_dict()
+            bart_state_dict = MBartForCausalLM.from_pretrained("DeepPavlov/mbart-large-50-ru-persona-chat").state_dict()
             new_bart_state_dict = self.model.state_dict()
             for x in new_bart_state_dict:
                 if x.endswith("embed_positions.weight") and self.max_position_embeddings != 1024:
